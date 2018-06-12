@@ -57,16 +57,16 @@ def splitdataset(dataset, axix, value):
 
 # 选择最好的数据集划分方式
 def choosebestfeaturetosplit(dataset):
-    numfeatures = len(dataset[0]) - 1  # 以0为起点计算单个样本特征
-    baseentropy = calcshannonent(dataset)  # 度量数据集的无序程度, 又称原始熵
-    bestinfogain, bestfeature = 0.0, -1  # 最佳的信息增益, 最佳的特征
+    numfeatures = len(dataset[0]) - 1  # 以0为起点计算单个样本特征长度
+    baseentropy = calcshannonent(dataset)  # 度量数据集的无序程度, 又称原始香农熵
+    bestinfogain, bestfeature = 0.0, -1  # 最佳的信息增益, 最佳特征索引值
     for i in range(numfeatures):  # 遍历单个样本特征, 同时也隐式去掉了列目标值
         featlist = [example[i] for example in dataset]  # 生成每列特征值的列表, 不包含目标值    [1, 1, 1, 0, 0]
         uniquevals = set(featlist)  # 去掉重复的列特征值     set([0, 1])
-        newentropy = 0.0
+        newentropy = 0.0    # 初始化当前样本的熵
         for value in uniquevals:  # 遍历不重复的列特征值
-            # 划分出特定的数据集, 筛选符合指定特征后面所有列(不包括指定特征)    [[1, 'no'], [1, 'no']]
-            subdataset = splitdataset(dataset, i, value)
+            # 划分出特定的数据集, 筛选符合指定特征后面所有列(不包括指定特征)
+            subdataset = splitdataset(dataset, i, value)    # [[1, 'no'], [1, 'no']]
             prob = len(subdataset) / float(len(dataset))  # 划分分类之后的次数 / 数据集      (计算类别出现的频率)
             newentropy += prob * calcshannonent(subdataset)  # 熵 += 出现的频率 * 数据集的无序程度
         infogain = baseentropy - newentropy  # 最佳的信息增益 - 熵    0.2421793565
