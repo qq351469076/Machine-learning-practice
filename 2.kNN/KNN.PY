@@ -57,8 +57,8 @@ def autoNorm(dataSet):
     ranges = maxValues - minValues                      # 求差，得数据的范围
     normDataSet = np.zeros(shape=np.shape(dataSet))     # 根据shape创建都为0的矩阵
     m = dataSet.shape[0]                                # 样本数量
-    normDataSet = dataSet - np.tile(minValues, (m, 1))  # 生成与最小值之差组成的矩阵, (X - Xmin)
-    normDataSet = normDataSet / np.tile(ranges, (m, 1))	# 最小值之差除以最大值和最小值的差值, 得到归一化数值，默认取值范围: [0-1], (X - Xmin) / (Xmax - Xmin)
+    normDataSet = dataSet - np.tile(minValues, (m, 1))  # (X - min)
+    normDataSet = normDataSet / np.tile(ranges, (m, 1))	# 			/ (Xmax - Xmin), 区间在[0, 1]
     return normDataSet, ranges, minValues
 
 
