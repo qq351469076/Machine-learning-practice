@@ -23,19 +23,22 @@ def createDataSet():
 
 # 将文本转换成向量矩阵
 def file2matrix(filename):
-    with open(filename, 'r') as file:  # 打开文件
+	"""
+	返回样本数据数组和标签
+	"""
+    with open(filename, 'r') as file:
         arrayLines = file.readlines()  # 读取文件中所有行数据
         numberOfLines = len(arrayLines)  # 文件行数
-        returnMat = np.zeros((numberOfLines, 3))  # 创建返回的都是0的矩阵
+        returnMat = np.zeros((numberOfLines, 3))  # 创建 文件行数的数量的行, 3列都是0的矩阵
         classLabelVector = []  # 创建标签值列表
         index = 0
         for line in arrayLines:  # 遍历行
-            line = line.strip()  # 去除空格
-            listFromLine = line.split('\t')  # 根据\t划分为列表
+            line = line.strip()  # 去除两边空格
+            listFromLine = line.split('\t')  # 切割所有行变成列表形式
             returnMat[index, :] = listFromLine[0:3]  # 获取该行的前3个数据(飞行历程, 游戏时间, 冰激凌数), 把类别单独抽出来
             classLabelVector.append(int(listFromLine[-1]))  # 获取该样本数据的类别, 抽成一个标签值列表
             index += 1
-    return returnMat, classLabelVector  # 返回样本数据数组和标签
+    return returnMat, classLabelVector
 
 
 # 使用Matplotlib(2.2 示例：使用k-近邻算法改进约会网站的配对效果)
