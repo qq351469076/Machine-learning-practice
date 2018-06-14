@@ -23,9 +23,9 @@ def createDataSet():
 
 # 将文本转换成向量矩阵
 def file2matrix(filename):
-	"""
-	返回样本数据数组和标签
-	"""
+    """
+    返回样本数据数组和标签
+    """
     with open(filename, 'r') as file:
         arrayLines = file.readlines()  # 读取文件中所有行数据
         numberOfLines = len(arrayLines)  # 文件行数
@@ -187,7 +187,7 @@ def gaussian(dist, sigma=10.0):
 
 
 # kNN实现算法之三, 算法优化
-def classify2(inX, dataSet, Labels, k):
+def classify2(inX, dataSet, labels, k):
     dataSetSize = dataSet.shape[0]  # 获取数组行数
     # 计算欧几里得距离
     diffMat = np.tile(inX, (dataSetSize, 1)) - dataSet  # xA0-xB0,将inX变为等同于dataSet的矩阵
