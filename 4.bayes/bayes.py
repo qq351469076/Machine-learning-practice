@@ -24,7 +24,7 @@ def loadDataSet():
     return postingList, classVec
 
 
-# 创建词汇列表
+# 朴素贝叶斯词集模型
 def createVocabList(dataSet):
     """
     :return: 不重复的词表
@@ -35,7 +35,7 @@ def createVocabList(dataSet):
     return list(vocabSet)
 
 
-# 去重之后的词表
+# 构建样本特征, 返回一条文档向量, 元素为1或0, 分别代表是否出现
 def setOfWords2Vec(vocabList, inputSet):
     """
     词频向量
@@ -52,17 +52,17 @@ def setOfWords2Vec(vocabList, inputSet):
     return returnVec
 
 
-# 朴素贝叶斯分类器 训练函数
+# 从词向量计算概率
 # 返回每个字出现的概率, 以及类别标签出现的概率
 def trainNB0(trainMatrix, trainCategory):
     """
-    :param trainMatrix: 去重之后的出现侮辱性文字的向量
+    :param trainMatrix: 多条词频率向量
     :param trainCategory: 类别标签
-    :return: P0(w|c)  P1(w|c)    辱骂文档的概率
+    :return: 非辱骂概率, 辱骂概率, 侮辱类的概率
     """
     numTrainDocs = len(trainMatrix)  # 计算向量长度  6
-    numWords = len(trainMatrix[0])  # 计算一个向量的元素长度  32
-    pAbusive = sum(trainCategory) / float(numTrainDocs)  # 计算 辱骂类别 在  总类别   中出现的次数
+    numWords = len(trainMatrix[0])  # 计算向量的元素长度  32
+    pAbusive = sum(trainCategory) / float(numTrainDocs)  # 共6个类别, 三不同三相同, 简单的除开了, 获得侮辱类的概率
     """这个函数第一个缺陷是:
     要计算多个概率的乘积以获得文档属于某个类别的概率, 即计算p(W0|1)p(W1|1), 如果其中一个概率为0, 那么乘积
     最后也是0, 为降低这种概率, 将所有词的出现数初始化为1, 并将分母初始化为2
@@ -72,58 +72,66 @@ def trainNB0(trainMatrix, trainCategory):
     p1Denom = 0.0  # P2分母       # 原先"""
     p0Num = ones(numWords)  # 初始化 非辱骂性文字 向量(分子)
     p1Num = ones(numWords)  # 初始化 辱骂性文字 向量(分子)
-    p0Denom = 2.0  # P1分母
-    p1Denom = 2.0  # P2分母
-    for i in range(numTrainDocs):  # 遍历向量 6
-        if trainCategory[i] == 1:  # 如果当前类别标签是 辱骂性文字
-            p1Num += trainMatrix[i]  # 遍历每个辱骂性文档, 有辱骂的词就在其词表上+1
-            p1Denom += sum(trainMatrix[i])  # 计算当前词表的辱骂出现的次数
-        else:
+    p0Denom = 2.0  # P0分母
+    p1Denom = 2.0  # P1分母
+    for i in range(numTrainDocs):  # 遍历词向量
+        if trainCategory[i] == 1:  # 如果当前类别标签是 辱骂性文字类别
+            p1Num += trainMatrix[i]  # 当前词向量出现辱骂性文字的地方计数+1
+            p1Denom += sum(trainMatrix[i])  # 计算本轮总共出现辱骂性文字的次数
+        else:  # 非辱骂性文字类别
             p0Num += trainMatrix[i]
             p0Denom += sum(trainMatrix[i])
-    """另一个问题是下溢出, 由于太多很小的数想成造成的
+    """另一个问题是下溢出, 由于太多很小的数相乘造成的
     当计算乘积p(W0|Ci)p(W1|Ci)时, 由于大部分因子都很小, 所以程序会下溢出或者得到不正确的答案, 最后会四舍五入
     得到0, 解决办法是对乘积取自然对数, 在代数中ln(a*b)=ln(a)+ln(b)
     p1Vect = p1Num / p1Denom
     p0Vect = p0Num / p0Denom
     """
-    p1Vect = log(p1Num / p1Denom)  # 矩阵中每个辱骂词的出现的次数 / 总共出现的次数
+    # 知道一个词是否出现在一篇文档中, 也知道该文档所属的类别, 对每个元素除以该类别的总词数获得条件概率
+    p1Vect = log(p1Num / p1Denom)  # 属于辱骂性文档的概率
     p0Vect = log(p0Num / p0Denom)
     return p0Vect, p1Vect, pAbusive
 
 
-# 朴素贝叶斯分类器
+# -----------------------------------------------朴素贝叶斯分类函数------------------------------------------------------
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
     """
-    :param vec2Classify: 训练集
-    :param p0Vec: 出现侮辱性文字概率的向量
-    :param p1Vec: 出现非侮辱性文字概率的向量
-    :param pClass1: 出现侮辱性文字的概率
-    :return: 文字类别
+    :param vec2Classify: 训练集-词频率向量
+    :param p0Vec: 非侮辱性概率的向量
+    :param p1Vec: 侮辱性概率的向量
+    :param pClass1: 侮辱性类别的概率
+    :return: 文档类别
     """
-    p1 = sum(vec2Classify * p1Vec) + log(pClass1)  # element-wise mult
+    p1 = sum(vec2Classify * p1Vec) + log(pClass1)  # 对应元素相乘, 将词向量中的所有词相加, 再将该值加到类别的对数上
     p0 = sum(vec2Classify * p0Vec) + log(1.0 - pClass1)
-    if p1 > p0:
+    if p1 > p0:  # 返回大概率对应的类别标签
         return 1
     else:
         return 0
 
 
+# 贝叶斯训练器 + 贝叶斯分类器, 一套流程
 def testingNB():
+    """
+    给定测试集, 一个不重复的词表, 训练测试集, 获得词表出现概率的向量, 获得侮辱性文字的概率和非侮辱性文字的概率, 还有辱骂性文字
+    类别的概率, 通过贝叶斯分类器决定最终属于哪个类别
+    """
     listOPosts, listClasses = loadDataSet()  # 初始化训练集, 类别
-    myVocabList = createVocabList(listOPosts)  # 不重复的训练集
+    myVocabList = createVocabList(listOPosts)  # 不重复词表
     trainMat = []
     for postinDoc in listOPosts:
-        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))  # 每个词在训练集中的出现概率
-    p0V, p1V, pAb = trainNB0(array(trainMat), array(listClasses))  # 侮辱性文字出现的概率  非侮辱性文字出现的概率  类别的概率
-    # testEntry = ['love', 'my', 'dalmation']
-    # thisDoc = array(setOfWords2Vec(myVocabList, testEntry))     # 算出当前训练集的每个词出现频率
-    # print testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb)  # 属于哪个类别
+        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))  # 每个词频率向量
+    p0V, p1V, pAb = trainNB0(array(trainMat), array(listClasses))  # 侮辱性的概率  非侮辱性概率  辱骂性概率
+    testEntry = ['love', 'my', 'dalmation']
+    thisDoc = array(setOfWords2Vec(myVocabList, testEntry))  # 算出当前训练集的每个词出现频率
+    print testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb)  # 属于哪个类别
     testEntry = ['stupid', 'garbage']
     thisDoc = array(setOfWords2Vec(myVocabList, testEntry))
     print testEntry, 'classified as: ', classifyNB(thisDoc, p0V, p1V, pAb)
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# 朴素贝叶斯词袋模型
 def bagOfWords2VecMN(vocabList, inputSet):
     returnVec = [0] * len(vocabList)
     for word in inputSet:
@@ -132,6 +140,7 @@ def bagOfWords2VecMN(vocabList, inputSet):
     return returnVec
 
 
+# 文本解析
 def textParse(bigString):  # input is big string, #output is word list
     import re
     listOfTokens = re.split(r'\W*', bigString)
@@ -139,38 +148,38 @@ def textParse(bigString):  # input is big string, #output is word list
 
 
 def spamTest():
-    docList = [];
-    classList = [];
+    docList = []
+    classList = []
     fullText = []
     for i in range(1, 26):
         wordList = textParse(open('email/spam/%d.txt' % i).read())
-        docList.append(wordList)
-        fullText.extend(wordList)
-        classList.append(1)
+        docList.append(wordList)  # 添加文档列表
+        fullText.extend(wordList)  # 扩展文本
+        classList.append(1)  # 添加类别
         wordList = textParse(open('email/ham/%d.txt' % i).read())
         docList.append(wordList)
         fullText.extend(wordList)
         classList.append(0)
-    vocabList = createVocabList(docList)  # create vocabulary
-    trainingSet = range(50);
-    testSet = []  # create test set
+    vocabList = createVocabList(docList)  # 创建词集
+    trainingSet = range(50)
+    testSet = []  # 创建测试集合
     for i in range(10):
-        randIndex = int(random.uniform(0, len(trainingSet)))
-        testSet.append(trainingSet[randIndex])
-        del (trainingSet[randIndex])
-    trainMat = [];
+        randIndex = int(random.uniform(0, len(trainingSet)))  # 随机生成0-49的整数
+        testSet.append(trainingSet[randIndex])  # 测试集添加训练集一个元素
+        del (trainingSet[randIndex])  # 删除训练集一个元素
+    trainMat = []
     trainClasses = []
-    for docIndex in trainingSet:  # train the classifier (get probs) trainNB0
+    for docIndex in trainingSet:  # 创建训练集, 词袋模型和类别标签
         trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))
         trainClasses.append(classList[docIndex])
-    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))  # 非侮辱性个体概率向量 侮辱性个体概率向量 侮辱类别概率
     errorCount = 0
-    for docIndex in testSet:  # classify the remaining items
-        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])
-        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+    for docIndex in testSet:  # 遍历测试集
+        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])     # 生成词袋模型
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:   # 分类出错
             errorCount += 1
-            print "classification error", docList[docIndex]
-    print 'the error rate is: ', float(errorCount) / len(testSet)
+            print u"分类错误", docList[docIndex]
+    print 'the error rate is: ', float(errorCount) / len(testSet)   # 出错概率
     # return vocabList,fullText
 
 
@@ -242,24 +251,25 @@ def getTopWords(ny, sf):
 
 
 if __name__ == '__main__':
-    listOposts, listClasses = loadDataSet()  # 创建测试集, 类别标签
-    myVocabList = createVocabList(listOposts)  # 创建不重复的测试集
-    """['cute', 'love', 'help', 'garbage', 'quit', 'I', 'problems', 'is', 'park', 'stop', 'flea', 
-    'dalmation', 'licks', 'food', 'not', 'him', 'buying', 'posting', 'has', 'worthless', 'ate', 'to', 
-    'maybe', 'please', 'dog', 'how', 'stupid', 'so', 'take', 'mr', 'steak', 'my'"""
-    result = setOfWords2Vec(myVocabList, listOposts[0])  # 测试集去重之后的词表
-    """[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]"""
-    trainMat = []
-    for postinDoc in listOposts:  # 遍历每个测试集
-        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
-    # 非辱骂性文字的概率   每个辱骂性文字出现的概率  另一个概率
-    p0V, p1V, pAbusive = trainNB0(trainMat, listClasses)
-    """[-3.04452244 -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244
- -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244 -3.04452244
- -3.04452244 -2.35137526 -2.35137526 -2.35137526 -2.35137526 -2.35137526
- -3.04452244 -1.94591015 -3.04452244 -2.35137526 -2.35137526 -3.04452244
- -1.94591015 -3.04452244 -1.65822808 -3.04452244 -2.35137526 -3.04452244
- -3.04452244 -3.04452244]
- 
-    0.5"""
-    testingNB()
+    #    listOposts, listClasses = loadDataSet()  # 创建测试集, 类别标签
+    #    myVocabList = createVocabList(listOposts)  # 创建不重复的测试集
+    #    """['cute', 'love', 'help', 'garbage', 'quit', 'I', 'problems', 'is', 'park', 'stop', 'flea',
+    #    'dalmation', 'licks', 'food', 'not', 'him', 'buying', 'posting', 'has', 'worthless', 'ate', 'to',
+    #    'maybe', 'please', 'dog', 'how', 'stupid', 'so', 'take', 'mr', 'steak', 'my'"""
+    #    result = setOfWords2Vec(myVocabList, listOposts[0])  # 测试集去重之后的词表
+    #    """[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]"""
+    #    trainMat = []
+    #    for postinDoc in listOposts:  # 遍历每个测试集
+    #        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
+    #    # 非辱骂性文字的概率   每个辱骂性文字出现的概率  另一个概率
+    #    p0V, p1V, pAbusive = trainNB0(trainMat, listClasses)
+    #    """[-3.04452244 -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244
+    # -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244 -3.04452244
+    # -3.04452244 -2.35137526 -2.35137526 -2.35137526 -2.35137526 -2.35137526
+    # -3.04452244 -1.94591015 -3.04452244 -2.35137526 -2.35137526 -3.04452244
+    # -1.94591015 -3.04452244 -1.65822808 -3.04452244 -2.35137526 -3.04452244
+    # -3.04452244 -3.04452244]
+    #
+    #    0.5"""
+    #    testingNB()
+    spamTest()
