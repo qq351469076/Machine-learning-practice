@@ -1,7 +1,6 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-
-
+import feedparser
 from numpy import *
 import sys
 
@@ -94,6 +93,7 @@ def trainNB0(trainMatrix, trainCategory):
 
 
 # -----------------------------------------------朴素贝叶斯分类函数------------------------------------------------------
+# 返回较大概率的类别
 def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
     """
     :param vec2Classify: 训练集-词频率向量
@@ -147,14 +147,15 @@ def textParse(bigString):  # input is big string, #output is word list
     return [tok.lower() for tok in listOfTokens if len(tok) > 2]
 
 
+# 贝叶斯邮件自动分类
 def spamTest():
     docList = []
     classList = []
     fullText = []
     for i in range(1, 26):
-        wordList = textParse(open('email/spam/%d.txt' % i).read())
-        docList.append(wordList)  # 添加文档列表
-        fullText.extend(wordList)  # 扩展文本
+        wordList = textParse(open('email/spam/%d.txt' % i).read())  # 解析文本
+        docList.append(wordList)  # 添加词表
+        fullText.extend(wordList)  # 追加词表
         classList.append(1)  # 添加类别
         wordList = textParse(open('email/ham/%d.txt' % i).read())
         docList.append(wordList)
@@ -162,27 +163,28 @@ def spamTest():
         classList.append(0)
     vocabList = createVocabList(docList)  # 创建词集
     trainingSet = range(50)
-    testSet = []  # 创建测试集合
-    for i in range(10):
-        randIndex = int(random.uniform(0, len(trainingSet)))  # 随机生成0-49的整数
-        testSet.append(trainingSet[randIndex])  # 测试集添加训练集一个元素
-        del (trainingSet[randIndex])  # 删除训练集一个元素
+    testSet = []
+    for i in range(10):  # 从训练集合里划分出10条测试集, 并删掉这10条元素
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        testSet.append(trainingSet[randIndex])
+        del (trainingSet[randIndex])
     trainMat = []
     trainClasses = []
-    for docIndex in trainingSet:  # 创建训练集, 词袋模型和类别标签
+    for docIndex in trainingSet:  # 生成训练集和类别标签
         trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))
         trainClasses.append(classList[docIndex])
-    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))  # 非侮辱性个体概率向量 侮辱性个体概率向量 侮辱类别概率
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))  # 计算 最后汇总的 各个概率
     errorCount = 0
-    for docIndex in testSet:  # 遍历测试集
-        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])     # 生成词袋模型
-        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:   # 分类出错
+    for docIndex in testSet:  # 交叉留存验证, 估计错误率
+        wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])  # 生成词袋模型
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:  # 类别不一样
             errorCount += 1
             print u"分类错误", docList[docIndex]
-    print 'the error rate is: ', float(errorCount) / len(testSet)   # 出错概率
+    print 'the error rate is: ', float(errorCount) / len(testSet)  # 出错概率
     # return vocabList,fullText
 
 
+# 倒排返回前30个出现次数最多的
 def calcMostFreq(vocabList, fullText):
     import operator
     freqDict = {}
@@ -192,39 +194,46 @@ def calcMostFreq(vocabList, fullText):
     return sortedFreq[:30]
 
 
+# 地域相关用词
 def localWords(feed1, feed0):
+    """
+    :param feed1: NY
+    :param feed0: SF
+    :return:
+    """
     import feedparser
     docList = [];
     classList = [];
     fullText = []
-    minLen = min(len(feed1['entries']), len(feed0['entries']))
-    for i in range(minLen):
-        wordList = textParse(feed1['entries'][i]['summary'])
+    minLen = min(len(feed1['entries']), len(feed0['entries']))  # 选两个rss源最短的那个
+    for i in range(minLen):  # 遍历i次个人广告
+        wordList = textParse(feed1['entries'][i]['summary'])  # 解析文本, 获得前30个次数最高的词
         docList.append(wordList)
         fullText.extend(wordList)
-        classList.append(1)  # NY is class 1
+        classList.append(1)  # NY 类别是1
         wordList = textParse(feed0['entries'][i]['summary'])
         docList.append(wordList)
         fullText.extend(wordList)
-        classList.append(0)
-    vocabList = createVocabList(docList)  # create vocabulary
-    top30Words = calcMostFreq(vocabList, fullText)  # remove top 30 words
-    for pairW in top30Words:
-        if pairW[0] in vocabList: vocabList.remove(pairW[0])
-    trainingSet = range(2 * minLen);
-    testSet = []  # create test set
-    for i in range(20):
+        classList.append(0)  # SF 类别是0
+    vocabList = createVocabList(docList)  # 创建词表
+    top30Words = calcMostFreq(vocabList, fullText)  # 获得30个高频词列表
+    for pairW in top30Words:  # 词表也移除30个高频词
+        if pairW[0] in vocabList:
+            vocabList.remove(pairW[0])
+    trainingSet = range(2 * minLen)  # 生成两倍于最短rss源的长度
+    testSet = []
+    for i in range(20):  # 创建19个测试集, 并从训练集删除这19个测试集
         randIndex = int(random.uniform(0, len(trainingSet)))
         testSet.append(trainingSet[randIndex])
         del (trainingSet[randIndex])
-    trainMat = [];
+    trainMat = []
     trainClasses = []
-    for docIndex in trainingSet:  # train the classifier (get probs) trainNB0
-        trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))
+    for docIndex in trainingSet:  # 生成训练集
+        trainMat.append(bagOfWords2VecMN(vocabList, docList[docIndex]))  # 生成词袋模型
         trainClasses.append(classList[docIndex])
     p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
     errorCount = 0
-    for docIndex in testSet:  # classify the remaining items
+    for docIndex in testSet:  # 交叉验证测试集
         wordVector = bagOfWords2VecMN(vocabList, docList[docIndex])
         if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
             errorCount += 1
@@ -235,7 +244,7 @@ def localWords(feed1, feed0):
 def getTopWords(ny, sf):
     import operator
     vocabList, p0V, p1V = localWords(ny, sf)
-    topNY = [];
+    topNY = []
     topSF = []
     for i in range(len(p0V)):
         if p0V[i] > -6.0: topSF.append((vocabList[i], p0V[i]))
@@ -272,4 +281,8 @@ if __name__ == '__main__':
     #
     #    0.5"""
     #    testingNB()
-    spamTest()
+    # spamTest()
+    ny = feedparser.parse('http://newyork.craigslist.org/stp/index.rss')
+    sf = feedparser.parse('http://sfbak.craigslist.org/stp/index.rss')
+    # vocabList, pSF, pNY = localWords(ny, sf)
+    localWords(ny, sf)
