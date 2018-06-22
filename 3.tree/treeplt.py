@@ -1,7 +1,5 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-
-
 import sys
 import matplotlib.pyplot as plt
 import matplotlib
@@ -21,7 +19,7 @@ arrow_args = dict(arrowstyle="<-")  # 箭头样式
 # 绘制箭头
 def plotNode(nodeTxt, centerPt, parentPt, nodeType):
     """
-    :param nodeTxt:
+    :param nodeTxt: 文字
     :param centerPt: 箭头终点
     :param parentPt: 箭头起点
     :param nodeType: 箭头类型
@@ -125,9 +123,9 @@ def classify(inputTree, featLabels, testVec):
     """
     创建树会返回树的字典结构, 但是第一个关键词, 计算器不知道在特征标签的哪个位置, 于是需要此方法来查找第一关键词在
     列表中的索引
-    :param inputTree:
-    :param featLabels:
-    :param testVec:
+    :param inputTree:   决策树模型
+    :param featLabels:  特征标签
+    :param testVec: 测试样本
     :return:
     """
     firststr = inputTree.keys()[0]
@@ -167,9 +165,9 @@ if __name__ == '__main__':
     # print(leafnums)
     # maxdepth = getTreeDepth(mytree)
     # print maxdepth
-    # dataset, labels = createdataset()
-    # result = classify(mytree, labels, [1, 0])
-    # print(result)
+    dataset, labels = createdataset()
+    result = classify(mytree, labels, [1, 0])
+    print(result)
     # storeTree(mytree, 'classifierStorage.txt')
     # result = grabTree('classifierStorage.txt')
     # print(result)

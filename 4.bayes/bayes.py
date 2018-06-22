@@ -8,7 +8,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-# 测试数据集
+# 数据集
 def loadDataSet():
     """
     :return: 第一个变量是进行词条切分后的文档集合, 第二个变量是类别标签
@@ -57,11 +57,11 @@ def trainNB0(trainMatrix, trainCategory):
     """
     :param trainMatrix: 多条词频率向量
     :param trainCategory: 类别标签
-    :return: 非辱骂概率, 辱骂概率, 侮辱类的概率
+    :return: 非辱骂概率, 辱骂概率, 侮辱类别概率
     """
     numTrainDocs = len(trainMatrix)  # 计算向量长度  6
     numWords = len(trainMatrix[0])  # 计算向量的元素长度  32
-    pAbusive = sum(trainCategory) / float(numTrainDocs)  # 共6个类别, 三不同三相同, 简单的除开了, 获得侮辱类的概率
+    pAbusive = sum(trainCategory) / float(numTrainDocs)  # 计算侮辱类别概率
     """这个函数第一个缺陷是:
     要计算多个概率的乘积以获得文档属于某个类别的概率, 即计算p(W0|1)p(W1|1), 如果其中一个概率为0, 那么乘积
     最后也是0, 为降低这种概率, 将所有词的出现数初始化为1, 并将分母初始化为2
@@ -87,7 +87,7 @@ def trainNB0(trainMatrix, trainCategory):
     p0Vect = p0Num / p0Denom
     """
     # 知道一个词是否出现在一篇文档中, 也知道该文档所属的类别, 对每个元素除以该类别的总词数获得条件概率
-    p1Vect = log(p1Num / p1Denom)  # 属于辱骂性文档的概率
+    p1Vect = log(p1Num / p1Denom)  # 计算侮辱词语出现的概率
     p0Vect = log(p0Num / p0Denom)
     return p0Vect, p1Vect, pAbusive
 
@@ -260,18 +260,18 @@ def getTopWords(ny, sf):
 
 
 if __name__ == '__main__':
-    #    listOposts, listClasses = loadDataSet()  # 创建测试集, 类别标签
-    #    myVocabList = createVocabList(listOposts)  # 创建不重复的测试集
+       listOposts, listClasses = loadDataSet()  # 创建测试集, 类别标签
+       myVocabList = createVocabList(listOposts)  # 创建不重复的测试集
     #    """['cute', 'love', 'help', 'garbage', 'quit', 'I', 'problems', 'is', 'park', 'stop', 'flea',
     #    'dalmation', 'licks', 'food', 'not', 'him', 'buying', 'posting', 'has', 'worthless', 'ate', 'to',
     #    'maybe', 'please', 'dog', 'how', 'stupid', 'so', 'take', 'mr', 'steak', 'my'"""
     #    result = setOfWords2Vec(myVocabList, listOposts[0])  # 测试集去重之后的词表
     #    """[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1]"""
-    #    trainMat = []
-    #    for postinDoc in listOposts:  # 遍历每个测试集
-    #        trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
+       trainMat = []
+       for postinDoc in listOposts:  # 遍历每个测试集
+           trainMat.append(setOfWords2Vec(myVocabList, postinDoc))
     #    # 非辱骂性文字的概率   每个辱骂性文字出现的概率  另一个概率
-    #    p0V, p1V, pAbusive = trainNB0(trainMat, listClasses)
+       p0V, p1V, pAbusive = trainNB0(trainMat, listClasses)
     #    """[-3.04452244 -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244
     # -3.04452244 -3.04452244 -2.35137526 -2.35137526 -3.04452244 -3.04452244
     # -3.04452244 -2.35137526 -2.35137526 -2.35137526 -2.35137526 -2.35137526
@@ -282,7 +282,7 @@ if __name__ == '__main__':
     #    0.5"""
     #    testingNB()
     # spamTest()
-    ny = feedparser.parse('http://newyork.craigslist.org/stp/index.rss')
-    sf = feedparser.parse('http://sfbak.craigslist.org/stp/index.rss')
+    # ny = feedparser.parse('http://newyork.craigslist.org/stp/index.rss')
+    # sf = feedparser.parse('http://sfbak.craigslist.org/stp/index.rss')
     # vocabList, pSF, pNY = localWords(ny, sf)
-    localWords(ny, sf)
+    # localWords(ny, sf)
