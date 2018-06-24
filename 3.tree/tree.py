@@ -31,7 +31,7 @@ def calcshannonent(dataset):
             labelcounts[currentlabel] = 0  # 初始化该类别的值为0
         labelcounts[currentlabel] += 1  # 该类别出现的次数+1
     shannonent = 0.0  # 定义原始香农熵
-    for key in labelcounts:  # 遍历类别
+    for key in labelcounts:  # 计算每个类别的出现的概率
         prob = float(labelcounts[key]) / numentries  # 该类别出现的概率     P(xi) = 该分类出现的次数/总分类
         shannonent -= prob * log(prob, 2)  # 计算信息增益值         H(信息增益) = 概率*log2(概率)
     return shannonent
@@ -61,16 +61,16 @@ def choosebestfeaturetosplit(dataset):
     numfeatures = len(dataset[0]) - 1  # 计算特征长度, 去掉类别
     baseentropy = calcshannonent(dataset)
     bestinfogain, bestfeature = 0.0, -1  # 最佳的信息增益 最佳特征标签索引值
-    for i in range(numfeatures):  # 遍历特征
-        featlist = [example[i] for example in dataset]  # 生成 特征 列 所有特征值  列表
+    for i in range(numfeatures):  # 遍历每个特征标签下不重复的特征值, 选出最佳特征标签索引
+        featlist = [example[i] for example in dataset]  # 生成每列特征值
         uniquevals = set(featlist)  # 去重特征值
         newentropy = 0.0  # 初始化熵
         for value in uniquevals:  # 遍历特征值
-            subdataset = splitdataset(dataset, i, value)  # 每次划分出不同的特征不同的特征值, 没有一次是重复的
+            subdataset = splitdataset(dataset, i, value)  # 划分出  当前特征 + 当前特征值     的数据子集
             prob = len(subdataset) / float(len(dataset))  # 计算当前数据子集的概率
-            newentropy += prob * calcshannonent(subdataset)  # 累加当前特征的熵
-        infogain = baseentropy - newentropy  # 获得当前特征的信息增益
-        if infogain > bestinfogain:  # 如果当前的数据增益比记录
+            newentropy += prob * calcshannonent(subdataset)  # 累加当前的  数据子集   的无序程度(熵)
+        infogain = baseentropy - newentropy  # 计算本次特征轮询的信息增益
+        if infogain > bestinfogain:  # 如果当前的数据增益比记录大
             bestinfogain = infogain  # 覆盖之前的
             bestfeature = i  # 最佳特征索引值
     return bestfeature
