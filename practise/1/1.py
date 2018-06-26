@@ -49,17 +49,18 @@ def textcv():
     # vector = CountVectorizer(min_df=2, max_df=2)  # 最小出现两次, 最大也出现两次筛选出来
     vector = CountVectorizer()
     res = vector.fit_transform(["life is short,i like python"])  # 转换成词频列表
-    print(vector.get_feature_names())  # 去重词表
-    print(res.toarray())  # 词频向量
+    print(vector.get_feature_names())  # 去重特征值
+    print(res)    # 文本出现次数的向量
 
 
 # 字典特征抽取
 def dictvec():
     # 默认参数sparse是开启， 开启状态为sparse矩阵类型， 关闭为二维数组类型
     dict = DictVectorizer(sparse=False)  # 也可以关闭sparse, 用toarray()方式转换成二维数组
-    data = dict.fit_transform([{'city': '北京', 'temperature': 100}, {'city': '深圳', 'temperature': 30}])
-    print(' '.join(dict.get_feature_names()))  # 获取文本特征
-    print(data)  # 词频向量
+    res = dict.fit_transform([{'city': '北京', 'temperature': 100}, {'city': '深圳', 'temperature': 30},
+                        {'city': '大庆', 'temperature': 50}])
+    print(' '.join(dict.get_feature_names()))  # 去重文本特征值
+    print(res)  # 字典文本出现次数的向量
 
 
 # tfidf  考量的是每个分词在文章里面的重要程度
@@ -73,7 +74,7 @@ def tfidfvec():
 
 # 归一化
 def minmax():
-    mm = MinMaxScaler(feature_range=(2, 3))  # 可以指定归一化的区间
+    mm = MinMaxScaler(feature_range=(0, 1))  # 可以指定归一化的区间, 默认在[0, 1]之间
     data = mm.fit_transform([[90, 2, 10, 40], [60, 4, 15, 45], [75, 3, 13, 46]])
     print(data)
 
@@ -112,10 +113,10 @@ def tts():
     print(li.data)  # 获取特征
     print(li.target)  # 获取类别
     print(li.feature_names)  # 获取特征标签
-    print(li.target_names)  # 获取类别标签
+    print(li.target_names)  # 获取目标值标签
     """训练集的特征值       测试集的特征值     训练集类别     测试集类别,      规模为0.25, 随机种子自定"""
     x_train, y_test, x_target, y_target = train_test_split(li.data, li.target, test_size=0.25, random_state=24)
-    print(x_train, x_test)
+    print(x_train, y_test)
 
 
 if __name__ == "__main__":
@@ -127,8 +128,9 @@ if __name__ == "__main__":
     # stand()
     # im()
     # variance()
-    pca()
+    # pca()
     # cutword()
+    # tts()
 
 # 总结
 
