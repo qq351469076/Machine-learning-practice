@@ -16,6 +16,7 @@ from sklearn.metrics import classification_report  # 朴素贝叶斯分类器预
 from sklearn.neighbors import KNeighborsClassifier  # k近邻估计器
 from sklearn.model_selection import train_test_split  # 训练集划分测试集
 from sklearn.datasets import load_iris, fetch_20newsgroups  # 鸢尾植物数据集, 新闻数据集
+from sklearn.model_selection import GridSearchCV  # 网格搜索, 交叉验证
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -50,7 +51,7 @@ def textcv():
     vector = CountVectorizer()
     res = vector.fit_transform(["life is short,i like python"])  # 转换成词频列表
     print(vector.get_feature_names())  # 去重特征值
-    print(res)    # 文本出现次数的向量
+    print(res)  # 文本出现次数的向量
 
 
 # 字典特征抽取
@@ -58,7 +59,7 @@ def dictvec():
     # 默认参数sparse是开启， 开启状态为sparse矩阵类型， 关闭为二维数组类型
     dict = DictVectorizer(sparse=False)  # 也可以关闭sparse, 用toarray()方式转换成二维数组
     res = dict.fit_transform([{'city': '北京', 'temperature': 100}, {'city': '深圳', 'temperature': 30},
-                        {'city': '大庆', 'temperature': 50}])
+                              {'city': '大庆', 'temperature': 50}])
     print(' '.join(dict.get_feature_names()))  # 去重文本特征值
     print(res)  # 字典文本出现次数的向量
 
@@ -119,21 +120,59 @@ def tts():
     print(x_train, y_test)
 
 
+# 网格搜索, 交叉验证 + kNN算法
+def gridsearchcv():
+    x = '假装是训练集'
+    y = '假装是训练集目标值'
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)  # 划分测试集
+    std = StandardScaler()  # 标准化
+    x_train = std.fit_transform(x_train)  # 标准化转化规则
+    x_test = std.transform(x_test)  # 测试集采用转化规则
+    knn = KNeighborsClassifier()  # 初始化kNN估计器
+    knn.fit(x_train, y_train)  # 拟合数据, 转化规则
+    score = knn.score(x_test, y_test)
+    print score
+    param = {"n_neighbors": [1, 3, 5]}  # 网格搜索参数
+    gs = GridSearchCV(knn, param_grid=param, cv=2)  # cv参数是交叉验证的次数, 取多少次
+    gs.fit(x_train, y_train)
+    print("测试集的准确率：", gs.score(x_test, y_test))
+    print("选择了模型：", gs.best_estimator_)
+    print("每个超参数每一个交叉验证：", gs.cv_results_)
+    print("在交叉验证当中的最好验证结果：", gs.best_score_)  # 返回最佳的准确率 0.8211334476626017
+    print(gs.best_params_)  # 返回最佳的参数  {'n_estimators': 60}
+
+
+# 朴素贝叶斯
+def navie_bayes():
+    news = fetch_20newsgroups(subset='all')  # 获取新闻的数据集
+    x_train, x_test, y_train, y_test = train_test_split(news.data, news.target, test_size=0.25)  # 进行数据集的分割
+    tf = TfidfVectorizer()  # 进行特征抽取
+    x_train = tf.fit_transform(x_train)
+    x_test = tf.transform(x_test)
+    mlb = MultinomialNB(alpha=1.0)  # 进行朴素贝叶斯分类, 拉普拉斯平滑系数防止乘积等于0失效
+    mlb.fit(x_train, y_train)
+    y_predict = mlb.predict(x_test)
+    print("预测的文章类型结果：", y_predict)
+    score = mlb.score(x_test, y_test)  # 朴素贝叶斯估计器
+    print("准确率：", score)
+    print(classification_report(y_test, y_predict, target_names=news.target_names))  # 精确度和召回率和fi
+
+
 if __name__ == "__main__":
-    # dictvec()
-    # textcv()
-    # countvec()
-    # tfidfvec()
-    # minmax()
-    # stand()
-    # im()
-    # variance()
-    # pca()
-    # cutword()
-    # tts()
+# dictvec()
+# textcv()
+# countvec()
+# tfidfvec()
+# minmax()
+# stand()
+# im()
+# variance()
+# pca()
+# cutword()
+# tts()
 
 # 总结
-
+# -------------------------------------------------第一天--------------------------------------------------------------
 # 机器学习：数据， 分析获得的规律，对未知数据进行预测
 
 # 数据来源和类型：
@@ -167,3 +206,29 @@ if __name__ == "__main__":
 # 标注：
 # 非监督学习：特征值
 # 聚类算法
+
+# -----------------------------------------------第二天----------------------------------------------------------------
+# 1、数据集    训练集 和 测试集
+# 转换器和估计器
+# 估计器流程：1、fit    2、predict,  score
+
+# 2、k-近邻算法
+# 1、距离公式   欧氏距离
+
+# 3、朴素贝叶斯算法：朴素
+# （2）条件概率和联合概率
+# （3）贝叶斯公式 P( 类别 | 文档)
+
+# 4、模型评估方法
+# 准确率，精确率和召回率 F1
+
+# 5、模型的选择
+# 交叉验证：训练集+ 验证集    K折交叉验证  让算法更充分的去训练数据，模型得出的结果更加可信
+# 网格搜索：超参数     自动的选择比较好的参数
+
+# 6、决策树、随机森林
+# 理解信息熵还有信息增益
+# ID3            C4.5          CART
+# 信息增益        信息增益比       基尼系数
+# 随机森林 ：多个决策树       ---> 集成方法:利用多个分类器共同决定
+# 又放回的随机抽样

@@ -42,9 +42,9 @@ def knncls():
     knn.fit(x_train, y_train)
     score = knn.score(x_test, y_test)
     print score
-    # param = {"n_neighbors": [1, 3, 5]}
+    param = {"n_neighbors": [1, 3, 5]}
     # 使用网格搜索
-    # gs = GridSearchCV(knn, param_grid=param, cv=2)
+    gs = GridSearchCV(knn, param_grid=param, cv=2)
     # 输入数据
     # gs.fit(x_train, y_train)
     # 得出测试集的准确率
@@ -75,27 +75,4 @@ if __name__ == "__main__":
     # knncls()
     navie_bayes()
 
-# 1、数据集    训练集 和 测试集
-# 转换器和估计器
-# 估计器流程：1、fit    2、predict,  score
 
-# 2、k-近邻算法
-# 1、距离公式   欧氏距离
-
-# 3、朴素贝叶斯算法：朴素
-# （2）条件概率和联合概率
-# （3）贝叶斯公式 P( 类别 | 文档)
-
-# 4、模型评估方法
-# 准确率，精确率和召回率 F1
-
-# 5、模型的选择
-# 交叉验证：训练集+ 验证集    K折交叉验证  让算法更充分的去训练数据，模型得出的结果更加可信
-# 网格搜索：超参数     自动的选择比较好的参数
-
-# 6、决策树、随机森林
-# 理解信息熵还有信息增益
-# ID3            C4.5          CART
-# 信息增益        信息增益比       基尼系数
-# 随机森林 ：多个决策树       ---> 集成方法:利用多个分类器共同决定
-# 又放回的随机抽样
