@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import jieba  # 中文分词方法
+import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer  # 文本特征抽取
 from sklearn.feature_extraction import DictVectorizer  # 字典特征抽取
 from sklearn.feature_extraction.text import TfidfVectorizer  # 文字重要程度
@@ -12,11 +13,13 @@ from sklearn.preprocessing import Imputer  # 处理缺失值
 from sklearn.feature_selection import VarianceThreshold  # 特征选择
 from sklearn.decomposition import PCA  # PCA降维
 from sklearn.naive_bayes import MultinomialNB  # 朴素贝叶斯分类器
-from sklearn.metrics import classification_report  # 朴素贝叶斯分类器预估
+from sklearn.metrics import classification_report  # 分类报告
 from sklearn.neighbors import KNeighborsClassifier  # k近邻估计器
 from sklearn.model_selection import train_test_split  # 训练集划分测试集
 from sklearn.datasets import load_iris, fetch_20newsgroups  # 鸢尾植物数据集, 新闻数据集
 from sklearn.model_selection import GridSearchCV  # 网格搜索, 交叉验证
+from sklearn.tree import DecisionTreeClassifier, export_graphviz  # 决策树, 导出dot文件格式
+from sklearn.ensemble import RandomForestClassifier  # 随机森林
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -149,7 +152,7 @@ def navie_bayes():
     tf = TfidfVectorizer()  # 进行特征抽取
     x_train = tf.fit_transform(x_train)
     x_test = tf.transform(x_test)
-    mlb = MultinomialNB(alpha=1.0)  # 进行朴素贝叶斯分类, 拉普拉斯平滑系数防止乘积等于0失效
+    mlb = MultinomialNB(alpha=1.0)  # 进行朴素贝叶斯分类, 拉普拉斯平滑系数防止系数等于0失效
     mlb.fit(x_train, y_train)
     y_predict = mlb.predict(x_test)
     print("预测的文章类型结果：", y_predict)
@@ -158,18 +161,42 @@ def navie_bayes():
     print(classification_report(y_test, y_predict, target_names=news.target_names))  # 精确度和召回率和fi
 
 
+# 决策树分析泰坦尼克号
+def decision():
+    titan = pd.read_csv('http://biostat.mc.vanderbilt.edu/wiki/pub/Main/DataSets/titanic.txt')
+    x = titan[['pclass', 'age', 'sex']]  # 特征值
+    y = titan[['survived']]  # 目标值
+    x['age'].fillna(x['age'].mean(), inplace=True)  # 填充缺失值, inplace把缺失值替换成平均数
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
+    dict = DictVectorizer(sparse=False)
+    x_train = dict.fit_transform(x_train.to_dict(orient='records'))  # 按行转换成字典
+    x_test = dict.transform(x_test.to_dict(orient='records'))
+    # print(dict.get_feature_names())
+    # dec = DecisionTreeClassifier(max_depth=5)  # 决策树分类
+    # dec.fit(x_train, y_train)
+    # print('pirect', dec.predict(x_test))
+    # print('score', dec.score(x_test, y_test))
+    # # 特征名字对应的是dict的特征名字
+    # export_graphviz(dec, out_file='./tree.dot', feature_names=['年龄', '1st', '2st', '3st', '男性', '女性'])
+
+    # 随机森林
+    rf = RandomForestClassifier(n_estimators=5)    # 建立十棵树
+    rf.fit(x_train, y_train)
+    print(rf.score(x_test, y_test))
+
 if __name__ == "__main__":
-# dictvec()
-# textcv()
-# countvec()
-# tfidfvec()
-# minmax()
-# stand()
-# im()
-# variance()
-# pca()
-# cutword()
-# tts()
+    # dictvec()
+    # textcv()
+    # countvec()
+    # tfidfvec()
+    # minmax()
+    # stand()
+    # im()
+    # variance()
+    # pca()
+    # cutword()
+    # tts()
+    decision()
 
 # 总结
 # -------------------------------------------------第一天--------------------------------------------------------------
