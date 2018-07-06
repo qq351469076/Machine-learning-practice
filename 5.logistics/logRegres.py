@@ -41,9 +41,9 @@ def gradAscent(dataMatIn, classLabels):
     maxCycles = 500  # 迭代次数
     weights = np.ones((n, 1))  # 初始化回归系数, 都是1 (3, 1)
     for k in range(maxCycles):  # 迭代500次
-        h = sigmoid(dataMatrix * weights)  # 计算回归系数  (100, 1)
+        h = sigmoid(dataMatrix * weights)  # 计算数据集的回归系数  (100, 1)
         error = (labelMat - h)  # 计算真实类别与预测类别的差值, (100, 1)
-        weights = weights + alpha * dataMatrix.transpose() * error  # 按照该差值的方向调整每一次的回归系数  (3, 1)
+        weights = weights + alpha * dataMatrix.transpose() * error  # 计算梯度上升  (3, 1)
     return weights
 
 
@@ -183,10 +183,11 @@ def multiTest():
 
 
 if __name__ == '__main__':
-    # dataset, label = loadDataSet()
-    # weights = gradAscent(dataset, label)
+    dataset, label = loadDataSet()
+    weights = gradAscent(dataset, label)
+    print(weights)
     # plotBestFit(weights)
     # weights = stocGradAscent0(np.array(dataset), label)
     # plotBestFit(weights)
     # stocGradAscent1(dataset, label)
-    colicTest()
+    # colicTest()
