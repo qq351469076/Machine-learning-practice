@@ -22,7 +22,7 @@ def loadDataSet(fileName):
 # 任何不等于i的j, 范围0-m
 def selectJrand(i, m):
     """
-    :param i: alpha的下标
+    :param i: 第一个alpha的下标
     :param m: 所有alpha的数目
     :return: 任何不等于i的j, 范围0-m
     """
@@ -48,13 +48,13 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
     :param classLabels: 目标值
     :param C: 常数C 0.6
     :param toler:容错率 0.001
-    :param maxIter: 取消前循环的最大次数 40
+    :param maxIter: 循环次数 40
     :return:
     """
     dataMatrix = np.mat(dataMatIn)  # 将数据集转化成矩阵 (m, n)
     labelMat = np.mat(classLabels).transpose()  # 将目标值转换成矩阵在转置, (m, 1)
     b = 0  # 初始化 常数b
-    m, n = np.shape(dataMatrix)  # 数据集的行, 列
+    m, n = np.shape(dataMatrix)  # 样本的数量, 样本维度
     alphas = np.mat(np.zeros((m, 1)))  # 初始化alpha系数, (m, 1)
     iter = 0  # 初始化 循环次数
     while iter < maxIter:  # 循环次数 小于 取消前循环的最大次数
@@ -62,7 +62,7 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
         for i in range(m):  # 遍历所有样本
             """
                 ( float( (1, m) ) * (m ,1) ) + 常数b,   (1, 1)
-                ((每个目标值 * alpha系数) * (数据集 * 当前样本.T)) + 常数b
+                ((所有目标值 * alpha系数) * (整个数据集 * 当前样本.T)) + 常数b
             """
             fXi = float(np.multiply(alphas, labelMat).T * (dataMatrix * dataMatrix[i, :].T)) + b  # 预测的类别
             print('')
@@ -74,7 +74,7 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
                 
                 (当前样本 * 误差 < -容错率) and (当前样本alpha系数 < 常数c)
                 或者
-                ((当前样本 * 误差 > 容错) and (当前样本alpha系数 > 0))
+                ((当前样本 * 误差 > 容错率) and (当前样本alpha系数 > 0))
             """
             if ((labelMat[i] * Ei < -toler) and (alphas[i] < C)) or ((labelMat[i] * Ei > toler) and (alphas[i] > 0)):
                 j = selectJrand(i, m)  # 随机选择第二个alpha, 不等于当前循环次数 且 范围在0-样本数量之内 的随机数
@@ -92,12 +92,13 @@ def smoSimple(dataMatIn, classLabels, C, toler, maxIter):
                     L = max(0, alphas[j] - alphas[i])
                     H = min(C, C + alphas[j] - alphas[i])
                     print('L是: ' + str(L) + ', H为: ' + str(H))
-                else:  # 保证alpha J在0和C之间, 已经在边界上了, 也不够优化了
+                else:
                     print('两个样本当前不一样')
                     # 收款方
                     L = max(0, alphas[j] + alphas[i] - C)
                     H = min(C, alphas[j] + alphas[i])
                     print('L是: ' + str(L) + ', H为: ' + str(H))
+                print('L: ' + str(L) + ', H: ' + str(H))
                 if L == H:
                     print "L==H"
                     continue
